@@ -64,6 +64,10 @@ func GetComponentFromQueryResult[T interface{}](q *QueryResult) (*T, error) {
 		return nil, fmt.Errorf("No component for this index")
 	}
 
-	component := (entry).(*T)
+	component, ok := (entry).(*T)
+  if !ok {
+    return nil, fmt.Errorf("Component does not match T - failed assertion")
+  }
+
 	return component, nil
 }
