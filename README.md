@@ -13,7 +13,7 @@ A bucket contains a map of component types (string representations) to slices of
 
 
 ## Entities
-Entities in this ECS are just indexes into the component slices in the bucket to which they are added.
+Entities in this ECS are just containers that hold indexes into the component slices in the bucket to which they are added and a bit mask indicating which component types they have associated with them.
 
 
 ## Components
