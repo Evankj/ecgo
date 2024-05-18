@@ -1,7 +1,6 @@
 package bucket
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/Evankj/ecgo/ecs/core"
@@ -50,7 +49,6 @@ func TestAddComponentToEntity(t *testing.T) {
 	}
 
 	entries := len(b.ComponentMap[core.TypeId[TestComponent1]()].Entries)
-	fmt.Printf("\n---------------------------- ENTRIES: %d\n\n", entries)
 	if entries != 2 {
 		t.Fatalf("Expected 2 entry for bucket's component map entries, got %d", entries)
 	}
