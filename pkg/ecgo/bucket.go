@@ -69,7 +69,7 @@ func (b *Bucket) CreateEntity() Size {
 	return entity.Index
 }
 
-func registerComponent[T any](b *Bucket) error {
+func RegisterComponent[T any](b *Bucket) error {
 	typeId := TypeId[T]()
 	if b.ComponentMap[typeId] != nil {
 		return fmt.Errorf("Component with type id: %s already registered!", typeId)
@@ -93,7 +93,7 @@ func registerComponent[T any](b *Bucket) error {
 func AddComponentToEntityByID[T any](b *Bucket, entityId Size, component *T) error {
 	typeId := TypeId[T]()
 	if b.ComponentMap[typeId] == nil {
-		err := registerComponent[T](b)
+		err := RegisterComponent[T](b)
 		if err != nil {
 			// This should not happen as we confirmed above
 			return err
