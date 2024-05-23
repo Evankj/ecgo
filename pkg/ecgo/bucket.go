@@ -1,32 +1,28 @@
-package bucket
+package ecgo
 
 import (
 	"fmt"
-
-	"github.com/Evankj/ecgo/ecs/component"
-	"github.com/Evankj/ecgo/ecs/core"
-	"github.com/Evankj/ecgo/ecs/entity"
 )
 
 type Bucket struct {
-	Size          core.Size
-	ComponentMap  map[string]*component.Component
-	UnusedIndexes []core.Size
-	MaxComponents core.Size
-	Entities      []*entity.Entity
+	Size          Size
+	ComponentMap  map[string]*Component
+	UnusedIndexes []Size
+	MaxComponents Size
+	Entities      []*Entity
 }
 
 func NewBucket() *Bucket {
 	return &Bucket{
 		Size:          0,
-		ComponentMap:  make(map[string]*component.Component),
-		UnusedIndexes: []core.Size{},
-		Entities:      []*entity.Entity{},
+		ComponentMap:  make(map[string]*Component),
+		UnusedIndexes: []Size{},
+		Entities:      []*Entity{},
 		MaxComponents: (64 / 8), // 64 bits in bytes TODO: Revisit this to remove this limitation
 	}
 }
 
-func (b *Bucket) DeleteEntityById(entityId core.Size) error {
+func (b *Bucket) DeleteEntityById(entityId Size) error {
 	entity := b.Entities[entityId]
 	if entity == nil {
 		return fmt.Errorf("No entity with id %d in this bucket", entityId)
@@ -40,8 +36,8 @@ func (b *Bucket) DeleteEntityById(entityId core.Size) error {
 	return nil
 }
 
-func (b *Bucket) CreateEntity() core.Size {
-	index, err := core.Pop(&b.UnusedIndexes)
+func (b *Bucket) CreateEntity() Size {
+	index, err := Pop(&b.UnusedIndexes)
 	if err != nil {
 		// unused index slice is empty
 		// time to push a new entry onto all of the component arrays
@@ -49,9 +45,9 @@ func (b *Bucket) CreateEntity() core.Size {
 			v.Entries = append(v.Entries, nil)
 		}
 
-		length := core.Size(len(b.Entities))
+		length := Size(len(b.Entities))
 
-		entity := entity.Entity{
+		entity := Entity{
 			Index: length,
 			Mask:  0,
 		}
@@ -62,7 +58,7 @@ func (b *Bucket) CreateEntity() core.Size {
 		return entity.Index
 	}
 
-	entity := entity.Entity{
+	entity := Entity{
 		Index: index,
 		Mask:  0,
 	}
@@ -73,21 +69,20 @@ func (b *Bucket) CreateEntity() core.Size {
 	return entity.Index
 }
 
-
-func registerComponent[T interface{}](b *Bucket) error {
-	typeId := core.TypeId[T]()
+func registerComponent[T any](b *Bucket) error {
+	typeId := TypeId[T]()
 	if b.ComponentMap[typeId] != nil {
 		return fmt.Errorf("Component with type id: %s already registered!", typeId)
 	}
 
-	entries := []interface{}{}
-  for range len(b.Entities) {
-    entries = append(entries, nil)
-  }
+	entries := []any{}
+	for range len(b.Entities) {
+		entries = append(entries, nil)
+	}
 
 	mask := uint64(1 << len(b.ComponentMap))
 
-	b.ComponentMap[typeId] = &component.Component{
+	b.ComponentMap[typeId] = &Component{
 		Entries: entries,
 		Mask:    mask,
 	}
@@ -95,8 +90,8 @@ func registerComponent[T interface{}](b *Bucket) error {
 	return nil
 }
 
-func AddComponentToEntityByID[T interface{}](b *Bucket, entityId core.Size, component *T) error {
-	typeId := core.TypeId[T]()
+func AddComponentToEntityByID[T any](b *Bucket, entityId Size, component *T) error {
+	typeId := TypeId[T]()
 	if b.ComponentMap[typeId] == nil {
 		err := registerComponent[T](b)
 		if err != nil {
@@ -111,17 +106,17 @@ func AddComponentToEntityByID[T interface{}](b *Bucket, entityId core.Size, comp
 
 	entity := b.Entities[entityId]
 
-  if len(c.Entries) - 1 < int(entity.Index)  {
-    return fmt.Errorf("No component entry for this entity's index in this bucket")
-  }
+	if len(c.Entries)-1 < int(entity.Index) {
+		return fmt.Errorf("No component entry for this entity's index in this bucket")
+	}
 
-  if entity == nil {
-    return fmt.Errorf("No entity with provided ID exists in this bucket")
-  }
+	if entity == nil {
+		return fmt.Errorf("No entity with provided ID exists in this bucket")
+	}
 
 	entity.Mask |= mask
 
-  c.Entries[entity.Index] = component
+	c.Entries[entity.Index] = component
 
 	return nil
 }

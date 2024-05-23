@@ -1,11 +1,11 @@
-package core
+package ecgo
 
 
 import (
 	"fmt"
 )
 
-func Pop[T interface{}](s *[]T) (T, error) {
+func Pop[T any](s *[]T) (T, error) {
 
 	sVal := *s
 

@@ -1,13 +1,13 @@
-package query
+package ecgo
 
 import (
+	"fmt"
 	"testing"
 
-	"github.com/Evankj/ecgo/ecs/bucket"
 )
 
 func TestQuery(t *testing.T) {
-	b := bucket.NewBucket()
+	b := NewBucket()
 
 	type TestPosComponent struct {
 		x int
@@ -19,24 +19,40 @@ func TestQuery(t *testing.T) {
 
 	entityId := b.CreateEntity()
 
-	err := bucket.AddComponentToEntityByID(b, entityId, &TestPosComponent{
+	err := AddComponentToEntityByID(b, entityId, &TestPosComponent{
 		x: 10,
 		y: 20,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = bucket.AddComponentToEntityByID(b, entityId, &TestRotComponent{
+	err = AddComponentToEntityByID(b, entityId, &TestRotComponent{
 		angle: 45.0,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	entityId = b.CreateEntity()
+	err = AddComponentToEntityByID(b, entityId, &TestPosComponent{
+		x: 0,
+		y: 0,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	q := NewQuery(b)
-	AddComponentToQuery[TestPosComponent](q)
+	q.WithComponents(
+		GetComponentType[TestPosComponent](),
+		GetComponentType[TestRotComponent](),
+	)
 
 	res := q.Execute()
+
+  if len(res) != 1 {
+    t.Fatalf("Expected one result for this query")
+  }
 
 	pos, err := GetComponentFromQueryResult[TestPosComponent](&res[0])
 	if err != nil || pos.x != 10 {
@@ -48,10 +64,28 @@ func TestQuery(t *testing.T) {
 		t.Fatalf("Failed to get rot component from entity")
 	}
 
+	q = NewQuery(b)
+	err = q.WithComponents(GetComponentType[TestPosComponent]())
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = q.WithoutComponents(GetComponentType[TestRotComponent]())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res = q.Execute()
+
+	fmt.Println(len(res))
+
+	if len(res) != 1 {
+		t.Fatalf("Expected one result for this query!")
+	}
+
 }
 
 func TestBulkQuery(t *testing.T) {
-	b := bucket.NewBucket()
+	b := NewBucket()
 
 	type TestPosComponent struct {
 		x int
@@ -66,7 +100,7 @@ func TestBulkQuery(t *testing.T) {
 
 		entityId := b.CreateEntity()
 
-		err := bucket.AddComponentToEntityByID(b, entityId, &TestPosComponent{
+		err := AddComponentToEntityByID(b, entityId, &TestPosComponent{
 			x: index,
 			y: index,
 		})
@@ -74,7 +108,7 @@ func TestBulkQuery(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = bucket.AddComponentToEntityByID(b, entityId, &TestRotComponent{
+		err = AddComponentToEntityByID(b, entityId, &TestRotComponent{
 			angle: float32(index),
 		})
 		if err != nil {
@@ -83,19 +117,15 @@ func TestBulkQuery(t *testing.T) {
 	}
 
 	q := NewQuery(b)
-	err := AddComponentToQuery[TestPosComponent](q)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = AddComponentToQuery[TestRotComponent](q)
+	err := q.WithComponents(GetComponentType[TestPosComponent]())
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	res := q.Execute()
+	fmt.Println(len(res))
 
 	for index, queryResult := range res {
-
 		pos, err := GetComponentFromQueryResult[TestPosComponent](&queryResult)
 		if err != nil {
 			t.Fatalf("Failed to get pos component from entity - index: %d", index)

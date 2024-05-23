@@ -2,8 +2,6 @@
 
 A very minimal Entity Component System implementation I created to help me learn more about Go (especially the new generics) and ECS architectures.
 
-A basic example project utilising the excellent raylib Go bindings is provided in the examples folder.
-
 # Concepts
 
 ## Buckets
